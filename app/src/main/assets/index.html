@@ -122,8 +122,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg1);font-family:'Segoe U
 }
 #hintArrow{font-size:26px;line-height:1;transition:transform .2s ease;}
 #foundBadge{
-  position:absolute;top:11%;left:50%;transform:translateX(-50%) scale(0.7);
-  font-size:34px;font-weight:800;color:#5adc8c;
+  position:absolute;top:12%;left:50%;transform:translateX(-50%) scale(0.7);
+  font-size:22px;font-weight:800;color:#5adc8c;white-space:nowrap;
   opacity:0;transition:opacity .2s ease, transform .2s ease;
   text-shadow:0 0 30px rgba(90,220,140,1);
   z-index:5;
@@ -177,7 +177,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg1);font-family:'Segoe U
 <div id="app">
   <div id="status">מאתר מיקום...</div>
   <div id="directionHint"><span id="hintArrow"></span><span id="hintDeg"></span></div>
-  <div id="foundBadge">✓ מכוון נכון!</div>
+  <div id="foundBadge">✓ זהו הכיוון!</div>
   <button id="invertBtn" onclick="toggleInvert()">↔ היפוך כיוון</button>
   <div id="flashOverlay"></div>
 
