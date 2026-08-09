@@ -101,10 +101,16 @@ function updateDisplay(heading){
 // קולבק שנקרא ישירות מ-Kotlin (MainActivity) בכל עדכון חיישן - כיוון יציב ומדויק
 // שחושב באמצעות מטריצת סיבוב מלאה, לא נוסחת Euler ידנית
 window.onNativeHeading = function(h){
+  const rawH=h;
   if(invertMode)h=(h+180)%360;
   if(Math.abs(h-lastHeading)>0.5){
     lastHeading=h;
     updateDisplay(h);
+  }
+  const dbg=document.getElementById('debugRow');
+  if(dbg&&myLat!=null){
+    const bearing=calcBearing(myLat,myLng,TARGET_LAT,TARGET_LNG);
+    dbg.textContent = `raw=${rawH.toFixed(0)} used=${h.toFixed(0)} bearing=${bearing.toFixed(0)} relative=${((bearing-h+360)%360).toFixed(0)}`;
   }
 };
 
