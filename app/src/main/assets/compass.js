@@ -8,6 +8,10 @@ let lastHeading = 0;
 let lastAbsolute = false;
 let isUpright = false;
 
+// זוויות תצוגה מצטברות - מונעות קפיצת 360°→0° בסיבוב ה-CSS
+let displayedFlat = 0;
+let displayedAr = 0;
+
 // ---------- רקע כוכבים ----------
 (function makeStars(){
   const c = document.getElementById('stars');
@@ -77,14 +81,24 @@ function handleMotion(e){
   document.getElementById('flatCompass').style.opacity = isUpright?'0':'1';
 }
 
+// ---------- עוזר: מסלול הסיבוב הקצר ביותר (מונע קפיצה סביב 360°) ----------
+function shortestDelta(from, to){
+  let d = ((to - from) % 360 + 540) % 360 - 180;
+  return d;
+}
+
 // ---------- עדכון תצוגה ----------
 function updateDisplay(heading){
   if(myLat==null)return;
   const bearing = calcBearing(myLat,myLng,TARGET_LAT,TARGET_LNG);
   const relative = ((bearing - heading)+360)%360;
 
-  document.getElementById('flatDial').style.transform = `rotate(${relative}deg)`;
-  document.getElementById('arArrow').style.transform = `rotate(${relative}deg)`;
+  // מקדמים את הזווית המצטברת בהפרש הקצר ביותר, לא "קופצים" לערך הגולמי
+  displayedFlat += shortestDelta(displayedFlat % 360, relative);
+  displayedAr += shortestDelta(displayedAr % 360, relative);
+
+  document.getElementById('flatDial').style.transform = `rotate(${displayedFlat}deg)`;
+  document.getElementById('arArrow').style.transform = `rotate(${displayedAr}deg)`;
 
   const diff = Math.min(relative, 360-relative);
   document.getElementById('app').classList.toggle('on-target', diff <= ON_TARGET_THRESHOLD);
