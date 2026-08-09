@@ -15,6 +15,7 @@ import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -24,9 +25,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private val LOCATION_PERMISSION_REQUEST = 1001
 
     private val rotationMatrix = FloatArray(9)
-    private val remappedMatrix = FloatArray(9)
-    private val orientationAngles = FloatArray(3)
+    private val screenAdjustedMatrix = FloatArray(9)
+    private val verticalRemapMatrix = FloatArray(9)
+    private val orientationFlat = FloatArray(3)
+    private val orientationVertical = FloatArray(3)
     private var lastSentHeading = -999f
+
+    // מצב "אנכי" נקבע עם היסטרזיס (סף שונה לכניסה/יציאה) כדי למנוע ריצוד בגבול המעבר
+    private var useVerticalFormula = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,8 +99,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
 
-        // תיקון לפי סיבוב המסך הנוכחי (פורטרט/לנדסקייפ) - כך שהכיוון נכון
-        // בכל אחיזה של המכשיר, בלי תלות בהטיה (שוכב/עומד)
+        // שלב 1: תיקון לפי סיבוב המסך (פורטרט/לנדסקייפ)
         val rotation = windowManager.defaultDisplay.rotation
         val (axisX, axisY) = when (rotation) {
             Surface.ROTATION_90 -> Pair(SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X)
@@ -102,10 +107,32 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             Surface.ROTATION_270 -> Pair(SensorManager.AXIS_MINUS_Y, SensorManager.AXIS_X)
             else -> Pair(SensorManager.AXIS_X, SensorManager.AXIS_Y)
         }
-        SensorManager.remapCoordinateSystem(rotationMatrix, axisX, axisY, remappedMatrix)
-        SensorManager.getOrientation(remappedMatrix, orientationAngles)
+        SensorManager.remapCoordinateSystem(rotationMatrix, axisX, axisY, screenAdjustedMatrix)
+        SensorManager.getOrientation(screenAdjustedMatrix, orientationFlat)
 
-        var heading = Math.toDegrees(orientationAngles[0].toDouble()).toFloat()
+        val pitchDeg = Math.toDegrees(orientationFlat[1].toDouble())
+
+        // שלב 2: היסטרזיס - נכנסים לנוסחת "אנכי" ב-65°, יוצאים ממנה רק מתחת ל-50°
+        useVerticalFormula = when {
+            abs(pitchDeg) > 65 -> true
+            abs(pitchDeg) < 50 -> false
+            else -> useVerticalFormula
+        }
+
+        var heading: Float
+        if (useVerticalFormula) {
+            // ליד אנכי - עוקבים אחרי ציר ה-Z (גב המכשיר) שנשאר אופקי ויציב,
+            // במקום ציר ה-Y שנכנס לנקודת יחיד (gimbal lock) קרוב ל-90° הטיה
+            SensorManager.remapCoordinateSystem(
+                screenAdjustedMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Z, verticalRemapMatrix
+            )
+            SensorManager.getOrientation(verticalRemapMatrix, orientationVertical)
+            heading = Math.toDegrees(orientationVertical[0].toDouble()).toFloat()
+            // מתקנים לכיוון שהגב (לא החזית) של המכשיר מצביע אליו + 180 מעלות בהתאמה
+            heading = (heading + 180f) % 360f
+        } else {
+            heading = Math.toDegrees(orientationFlat[0].toDouble()).toFloat()
+        }
         if (heading < 0) heading += 360f
 
         if (Math.abs(heading - lastSentHeading) > 0.5f) {
