@@ -100,8 +100,17 @@ function updateDisplay(heading){
   document.getElementById('flatDial').style.transform = `rotate(${displayedFlat}deg)`;
   document.getElementById('arArrowInner').style.transform = `rotate(${displayedAr}deg)`;
 
-  const diff = Math.min(relative, 360-relative);
+  // diff חתום: חיובי = לפנות ימינה (כיוון השעון), שלילי = שמאלה
+  const signedDiff = relative <= 180 ? relative : relative - 360;
+  const diff = Math.abs(signedDiff);
   document.getElementById('app').classList.toggle('on-target', diff <= ON_TARGET_THRESHOLD);
+
+  const hintArrow = document.getElementById('hintArrow');
+  const hintDeg = document.getElementById('hintDeg');
+  if(diff > ON_TARGET_THRESHOLD){
+    hintArrow.textContent = signedDiff > 0 ? '↻' : '↺';
+    hintDeg.textContent = Math.round(diff) + '° ' + (signedDiff > 0 ? 'ימינה' : 'שמאלה');
+  }
 
   const dist = calcDistanceKm(myLat,myLng,TARGET_LAT,TARGET_LNG);
   document.getElementById('distKm').textContent = dist<1
