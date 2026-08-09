@@ -7,7 +7,8 @@ let myLat = null, myLng = null;
 let lastHeading = 0;
 let lastAbsolute = false;
 let isUpright = false;
-let invertMode = (localStorage.getItem('invertHeading')==='1');
+// ברירת המחדל היא הפוכה (מתוקנת) - נבדק ואומת בפועל שכיוון הבסיס דרש היפוך
+let invertMode = (localStorage.getItem('invertHeading')!=='0');
 
 // זוויות תצוגה מצטברות - מונעות קפיצת 360°→0° בסיבוב ה-CSS
 let displayedFlat = 0;
@@ -162,6 +163,7 @@ function startLocation(){
 
 // ---------- אתחול ----------
 function init(){
+  document.getElementById('invertBtn').classList.toggle('active',invertMode);
   window.addEventListener('deviceorientationabsolute',handleOrientation,true);
   window.addEventListener('deviceorientation',handleOrientation,true);
   window.addEventListener('devicemotion',handleMotion,true);
