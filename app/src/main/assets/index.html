@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>קודש הקודשים</title>
+<style>
+:root{
+  --gold:#d4af6a;
+  --gold-bright:#f4d98e;
+  --bg1:#05070d;
+  --bg2:#0d1420;
+  --glass:rgba(255,255,255,0.06);
+  --glass-border:rgba(255,255,255,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg1);font-family:'Segoe UI',sans-serif;}
+#stars{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,var(--bg2),var(--bg1) 80%);z-index:0;}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:0.5;}
+
+#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#eee;}
+
+#status{
+  position:absolute;top:6%;left:50%;transform:translateX(-50%);
+  font-size:14px;color:var(--gold);opacity:0.8;text-align:center;
+  letter-spacing:1px;
+}
+
+#distance{
+  position:absolute;bottom:8%;left:50%;transform:translateX(-50%);
+  text-align:center;
+}
+#distance .km{font-size:28px;font-weight:600;color:var(--gold-bright);}
+#distance .label{font-size:12px;color:#999;margin-top:2px;}
+
+/* ---------- FLAT MODE (compass disk) ---------- */
+#flatCompass{
+  width:78vw;max-width:340px;aspect-ratio:1/1;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,0.08),transparent 60%),var(--glass);
+  border:1px solid var(--glass-border);
+  backdrop-filter:blur(14px);
+  box-shadow:0 0 60px rgba(212,175,106,0.08), inset 0 0 40px rgba(0,0,0,0.4);
+  display:flex;align-items:center;justify-content:center;position:relative;
+  transition:opacity .4s ease, transform .4s ease;
+}
+#flatCompass .ring{
+  position:absolute;inset:6%;border-radius:50%;
+  border:1px solid rgba(212,175,106,0.25);
+}
+#flatDial{
+  width:88%;height:88%;border-radius:50%;position:relative;
+  transition:transform .15s ease-out;
+}
+#flatArrow{
+  position:absolute;top:4%;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;
+  border-bottom:26px solid var(--gold-bright);
+  filter:drop-shadow(0 0 8px rgba(244,217,142,0.7));
+}
+#flatDial::after{
+  content:"בית המקדש";position:absolute;top:16%;left:50%;transform:translateX(-50%);
+  font-size:11px;color:var(--gold);white-space:nowrap;letter-spacing:1px;
+}
+#flatCenter{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:14px;height:14px;border-radius:50%;background:var(--gold-bright);
+  box-shadow:0 0 20px rgba(244,217,142,0.8);
+}
+
+/* ---------- UPRIGHT MODE (AR floating arrow) ---------- */
+#uprightView{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .4s ease;
+}
+#arGlass{
+  width:60vw;max-width:260px;aspect-ratio:1/1;border-radius:50%;
+  background:var(--glass);border:1px solid var(--glass-border);
+  backdrop-filter:blur(16px);
+  box-shadow:0 0 80px rgba(212,175,106,0.1), inset 0 0 50px rgba(0,0,0,0.5);
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+#arArrow{
+  width:120px;height:120px;transition:transform .15s ease-out;
+}
+#arArrow svg{width:100%;height:100%;filter:drop-shadow(0 0 14px rgba(244,217,142,0.6));}
+
+.on-target #flatCenter,.on-target #arGlass{
+  animation:pulseGreen 1.2s infinite;
+}
+@keyframes pulseGreen{
+  0%{box-shadow:0 0 20px rgba(80,220,140,0.9);}
+  50%{box-shadow:0 0 45px rgba(80,220,140,1);}
+  100%{box-shadow:0 0 20px rgba(80,220,140,0.9);}
+}
+.on-target #arArrow svg,.on-target #flatArrow{
+  filter:drop-shadow(0 0 18px rgba(80,220,140,1)) !important;
+}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div id="app">
+  <div id="status">מאתר מיקום...</div>
+
+  <div id="flatCompass">
+    <div class="ring"></div>
+    <div id="flatArrow"></div>
+    <div id="flatDial">
+      <div id="flatCenter"></div>
+    </div>
+  </div>
+
+  <div id="uprightView">
+    <div id="arGlass">
+      <div id="arArrow">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f4d98e"/>
+              <stop offset="100%" stop-color="#b4863f"/>
+            </linearGradient>
+          </defs>
+          <polygon points="50,8 72,60 50,46 28,60" fill="url(#g1)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="distance">
+    <div class="km" id="distKm">--</div>
+    <div class="label">מרחק לקודש הקודשים</div>
+  </div>
+</div>
+
+<script src="compass.js"></script>
+</body>
+</html>
