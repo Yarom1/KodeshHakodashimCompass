@@ -121,6 +121,7 @@ function handleOrientation(e){
 }
 
 // ---------- מיקום ----------
+let locationRetries=0;
 function startLocation(){
   navigator.geolocation.watchPosition(pos=>{
     myLat=pos.coords.latitude;
@@ -128,7 +129,14 @@ function startLocation(){
     document.getElementById('status').textContent='מכוון...';
     updateDisplay(lastHeading);
   },err=>{
-    document.getElementById('status').textContent='אין גישה למיקום';
+    // ניסיון חוזר קצר - ייתכן שההרשאה עוד לא הייתה סופית ברגע הבקשה הראשונה
+    if(locationRetries<5){
+      locationRetries++;
+      document.getElementById('status').textContent='מאתר מיקום...';
+      setTimeout(startLocation,800);
+    }else{
+      document.getElementById('status').textContent='אין גישה למיקום';
+    }
   },{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
 }
 

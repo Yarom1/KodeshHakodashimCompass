@@ -36,20 +36,31 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        requestLocationPermission()
-        webView.loadUrl("file:///android_asset/index.html")
-    }
-
-    private fun requestLocationPermission() {
+        // טוענים את הדף רק אחרי שההרשאה כבר סופית (מאושרת/נדחתה) -
+        // כך ה-JS לא מתחיל watchPosition לפני שה-OS סיים לעדכן את הסטטוס
         if (ContextCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
+            ) == PackageManager.PERMISSION_GRANTED
         ) {
+            webView.loadUrl("file:///android_asset/index.html")
+        } else {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
                 LOCATION_PERMISSION_REQUEST
             )
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
+            // בין אם אושר או נדחה - עכשיו ההרשאה סופית, בטוח לטעון את הדף
+            webView.loadUrl("file:///android_asset/index.html")
         }
     }
 }
