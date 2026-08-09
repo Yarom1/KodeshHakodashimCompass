@@ -7,6 +7,7 @@ let myLat = null, myLng = null;
 let lastHeading = 0;
 let lastAbsolute = false;
 let isUpright = false;
+let invertMode = (localStorage.getItem('invertHeading')==='1');
 
 // זוויות תצוגה מצטברות - מונעות קפיצת 360°→0° בסיבוב ה-CSS
 let displayedFlat = 0;
@@ -98,7 +99,9 @@ function updateDisplay(heading){
   displayedAr += shortestDelta(displayedAr % 360, relative);
 
   document.getElementById('flatDial').style.transform = `rotate(${displayedFlat}deg)`;
-  document.getElementById('arArrowInner').style.transform = `rotate(${displayedAr}deg)`;
+  // שומרים על ה-rotateX הקבוע (הטיית העומק) ומוסיפים אליו את סיבוב הכיוון בפועל,
+  // כי דריסת style.transform ישירות מוחקת את ההטיה הקבועה שמקזזת את המצפן המוטה
+  document.getElementById('arArrowInner').style.transform = `rotateX(-48deg) rotate(${displayedAr}deg)`;
 
   // diff חתום: חיובי = לפנות ימינה (כיוון השעון), שלילי = שמאלה
   const signedDiff = relative <= 180 ? relative : relative - 360;
@@ -121,13 +124,21 @@ function updateDisplay(heading){
 function handleOrientation(e){
   if(e.type==='deviceorientation'&&lastAbsolute)return;
   lastAbsolute=(e.type==='deviceorientationabsolute');
-  const h=getDeviceHeading(e);
+  let h=getDeviceHeading(e);
   if(h==null)return;
+  if(invertMode)h=(h+180)%360;
   if(Math.abs(h-lastHeading)>1){
     lastHeading=h;
     updateDisplay(h);
   }
 }
+
+function toggleInvert(){
+  invertMode=!invertMode;
+  localStorage.setItem('invertHeading',invertMode?'1':'0');
+  document.getElementById('invertBtn').classList.toggle('active',invertMode);
+}
+window.toggleInvert=toggleInvert;
 
 // ---------- מיקום ----------
 let locationRetries=0;
