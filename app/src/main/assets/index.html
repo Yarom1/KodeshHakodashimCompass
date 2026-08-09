@@ -67,22 +67,52 @@ html,body{height:100%;overflow:hidden;background:var(--bg1);font-family:'Segoe U
   box-shadow:0 0 20px rgba(244,217,142,0.8);
 }
 
-/* ---------- UPRIGHT MODE (AR floating arrow) ---------- */
+/* ---------- UPRIGHT MODE (AR 3D tilted dish) ---------- */
 #uprightView{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   opacity:0;pointer-events:none;transition:opacity .4s ease;
+  perspective:900px;
+}
+#arStage{
+  width:64vw;max-width:280px;aspect-ratio:1/1;position:relative;
+  transform-style:preserve-3d;
+  transform:rotateX(48deg);
 }
 #arGlass{
-  width:60vw;max-width:260px;aspect-ratio:1/1;border-radius:50%;
-  background:var(--glass);border:1px solid var(--glass-border);
+  position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,0.1),transparent 60%),var(--glass);
+  border:1px solid var(--glass-border);
   backdrop-filter:blur(16px);
-  box-shadow:0 0 80px rgba(212,175,106,0.1), inset 0 0 50px rgba(0,0,0,0.5);
-  display:flex;align-items:center;justify-content:center;position:relative;
+  box-shadow:0 0 80px rgba(212,175,106,0.12), inset 0 0 50px rgba(0,0,0,0.5);
+  transform:translateZ(0px);
+}
+#arRing1{
+  position:absolute;inset:8%;border-radius:50%;
+  border:1px solid rgba(212,175,106,0.3);
+  transform:translateZ(10px);
+}
+#arRing2{
+  position:absolute;inset:20%;border-radius:50%;
+  border:1px solid rgba(212,175,106,0.5);
+  background:radial-gradient(circle,rgba(212,175,106,0.06),transparent 70%);
+  transform:translateZ(20px);
+}
+#arWall{
+  position:absolute;inset:0;border-radius:50%;
+  background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0.55) 100%);
+  transform:translateZ(-6px);
+  box-shadow:0 30px 40px -10px rgba(0,0,0,0.6);
 }
 #arArrow{
-  width:120px;height:120px;transition:transform .15s ease-out;
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  transform:translateZ(34px);
+  transition:transform .15s ease-out;
 }
-#arArrow svg{width:100%;height:100%;filter:drop-shadow(0 0 14px rgba(244,217,142,0.6));}
+#arArrowInner{
+  width:38%;height:38%;
+  transform:rotateX(-48deg);
+}
+#arArrowInner svg{width:100%;height:100%;filter:drop-shadow(0 8px 10px rgba(0,0,0,0.5)) drop-shadow(0 0 14px rgba(244,217,142,0.6));}
 
 .on-target #flatCenter,.on-target #arGlass{
   animation:pulseGreen 1.2s infinite;
@@ -111,17 +141,23 @@ html,body{height:100%;overflow:hidden;background:var(--bg1);font-family:'Segoe U
   </div>
 
   <div id="uprightView">
-    <div id="arGlass">
+    <div id="arStage">
+      <div id="arWall"></div>
+      <div id="arGlass"></div>
+      <div id="arRing1"></div>
+      <div id="arRing2"></div>
       <div id="arArrow">
-        <svg viewBox="0 0 100 100">
-          <defs>
-            <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#f4d98e"/>
-              <stop offset="100%" stop-color="#b4863f"/>
-            </linearGradient>
-          </defs>
-          <polygon points="50,8 72,60 50,46 28,60" fill="url(#g1)"/>
-        </svg>
+        <div id="arArrowInner">
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f4d98e"/>
+                <stop offset="100%" stop-color="#b4863f"/>
+              </linearGradient>
+            </defs>
+            <polygon points="50,8 72,60 50,46 28,60" fill="url(#g1)"/>
+          </svg>
+        </div>
       </div>
     </div>
   </div>

@@ -98,7 +98,7 @@ function updateDisplay(heading){
   displayedAr += shortestDelta(displayedAr % 360, relative);
 
   document.getElementById('flatDial').style.transform = `rotate(${displayedFlat}deg)`;
-  document.getElementById('arArrow').style.transform = `rotate(${displayedAr}deg)`;
+  document.getElementById('arArrowInner').style.transform = `rotate(${displayedAr}deg)`;
 
   const diff = Math.min(relative, 360-relative);
   document.getElementById('app').classList.toggle('on-target', diff <= ON_TARGET_THRESHOLD);
