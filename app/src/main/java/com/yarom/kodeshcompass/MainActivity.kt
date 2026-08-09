@@ -31,9 +31,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private val orientationVertical = FloatArray(3)
     private var lastSentHeading = -999f
 
-    // מצב "אנכי" נקבע עם היסטרזיס (סף שונה לכניסה/יציאה) כדי למנוע ריצוד בגבול המעבר
-    private var useVerticalFormula = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -94,12 +91,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager.unregisterListener(this)
     }
 
+    // הפרש הזווית הקצר ביותר בין שתי זוויות (מונע קפיצת 360/0 בערבוב)
+    private fun shortestDelta(from: Float, to: Float): Float {
+        var d = (to - from) % 360f
+        if (d < -180f) d += 360f
+        if (d > 180f) d -= 360f
+        return d
+    }
+
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
 
         SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
 
-        // שלב 1: תיקון לפי סיבוב המסך (פורטרט/לנדסקייפ)
         val rotation = windowManager.defaultDisplay.rotation
         val (axisX, axisY) = when (rotation) {
             Surface.ROTATION_90 -> Pair(SensorManager.AXIS_Y, SensorManager.AXIS_MINUS_X)
@@ -110,32 +114,34 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         SensorManager.remapCoordinateSystem(rotationMatrix, axisX, axisY, screenAdjustedMatrix)
         SensorManager.getOrientation(screenAdjustedMatrix, orientationFlat)
 
-        val pitchDeg = Math.toDegrees(orientationFlat[1].toDouble())
+        val pitchDeg = Math.toDegrees(orientationFlat[1].toDouble()).toFloat()
+        var flatHeading = Math.toDegrees(orientationFlat[0].toDouble()).toFloat()
+        if (flatHeading < 0) flatHeading += 360f
 
-        // שלב 2: היסטרזיס - נכנסים לנוסחת "אנכי" ב-65°, יוצאים ממנה רק מתחת ל-50°
-        useVerticalFormula = when {
-            abs(pitchDeg) > 65 -> true
-            abs(pitchDeg) < 50 -> false
-            else -> useVerticalFormula
+        // נוסחת "אנכי" - עוקבים אחרי ציר ה-Z השלילי (הכיוון שהגב מצביע אליו, לא החזית),
+        // כי זה הציר שנשאר יציב ואופקי כשהמכשיר עומד, בניגוד ל-Y שנכנס לנקודת יחיד
+        SensorManager.remapCoordinateSystem(
+            screenAdjustedMatrix, SensorManager.AXIS_X, SensorManager.AXIS_MINUS_Z, verticalRemapMatrix
+        )
+        SensorManager.getOrientation(verticalRemapMatrix, orientationVertical)
+        var verticalHeading = Math.toDegrees(orientationVertical[0].toDouble()).toFloat()
+        if (verticalHeading < 0) verticalHeading += 360f
+
+        // מעבר חלק בין הנוסחאות לפי זווית ההטיה - בלי קפיצה חדה בגבול
+        val absPitch = abs(pitchDeg)
+        val heading: Float = when {
+            absPitch <= 50f -> flatHeading
+            absPitch >= 65f -> verticalHeading
+            else -> {
+                val weight = (absPitch - 50f) / 15f // 0..1
+                val delta = shortestDelta(flatHeading, verticalHeading)
+                var blended = flatHeading + delta * weight
+                blended = ((blended % 360f) + 360f) % 360f
+                blended
+            }
         }
 
-        var heading: Float
-        if (useVerticalFormula) {
-            // ליד אנכי - עוקבים אחרי ציר ה-Z (גב המכשיר) שנשאר אופקי ויציב,
-            // במקום ציר ה-Y שנכנס לנקודת יחיד (gimbal lock) קרוב ל-90° הטיה
-            SensorManager.remapCoordinateSystem(
-                screenAdjustedMatrix, SensorManager.AXIS_X, SensorManager.AXIS_Z, verticalRemapMatrix
-            )
-            SensorManager.getOrientation(verticalRemapMatrix, orientationVertical)
-            heading = Math.toDegrees(orientationVertical[0].toDouble()).toFloat()
-            // מתקנים לכיוון שהגב (לא החזית) של המכשיר מצביע אליו + 180 מעלות בהתאמה
-            heading = (heading + 180f) % 360f
-        } else {
-            heading = Math.toDegrees(orientationFlat[0].toDouble()).toFloat()
-        }
-        if (heading < 0) heading += 360f
-
-        if (Math.abs(heading - lastSentHeading) > 0.5f) {
+        if (Math.abs(shortestDelta(lastSentHeading, heading)) > 0.5f) {
             lastSentHeading = heading
             webView.evaluateJavascript("window.onNativeHeading && window.onNativeHeading($heading);", null)
         }
